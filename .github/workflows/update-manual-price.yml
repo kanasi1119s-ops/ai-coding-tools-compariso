@@ -1,0 +1,49 @@
+name: 手動価格更新
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "サイトのslug (例: chatgpt-codex, trae)"
+        required: true
+      plan_name:
+        description: "プラン名 (例: Plus, Pro+)"
+        required: true
+      raw_price_text:
+        description: "表示用テキスト (例: $20 / mo.)"
+        required: true
+      base_price_amount:
+        description: "数値の価格。$記号は付けない(例: 20)。不明なら空欄でOK"
+        required: false
+      price_basis:
+        description: "flat / per_seat / custom のいずれか"
+        required: false
+        default: "flat"
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Node.jsをセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 依存パッケージをインストール
+        run: npm install
+
+      - name: TypeScriptをビルド
+        run: npm run build
+
+      - name: 価格を更新
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SLUG: ${{ github.event.inputs.slug }}
+          PLAN_NAME: ${{ github.event.inputs.plan_name }}
+          RAW_PRICE_TEXT: ${{ github.event.inputs.raw_price_text }}
+          BASE_PRICE_AMOUNT: ${{ github.event.inputs.base_price_amount }}
+          PRICE_BASIS: ${{ github.event.inputs.price_basis }}
+        run: node dist/update-manual-price.js
