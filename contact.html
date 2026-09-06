@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>お問い合わせ・掲載依頼 — AIツール相場</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --ink: #111111;
+    --ink-soft: #6b7280;
+    --ink-mute: #9ca3af;
+    --line: #e5e7eb;
+    --line-soft: #f0f0f0;
+    --card-bg: #ffffff;
+    --accent: #4f46e5;
+    --accent-bg: #eef2ff;
+    --danger-ink: #b91c1c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Segoe UI", sans-serif;
+    line-height: 1.7;
+    font-size: 17px;
+  }
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+  }
+  .back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: var(--accent);
+    font-size: 14.5px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  header p {
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin: 0 0 24px;
+  }
+
+  .type-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: var(--accent-bg);
+    padding: 6px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+  .type-toggle button {
+    flex: 1;
+    min-width: 100px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 10px 8px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .type-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  form {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field input,
+  .field textarea {
+    width: 100%;
+    font-family: inherit;
+    font-size: 15.5px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .field textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+  .field-optional {
+    color: var(--ink-mute);
+    font-weight: 400;
+  }
+  button[type="submit"] {
+    width: 100%;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  #form-status {
+    margin-top: 14px;
+    font-size: 14.5px;
+    text-align: center;
+  }
+  #form-status.error { color: var(--danger-ink); }
+  #form-status.success { color: #15803d; }
+</style>
+</head>
+<body>
+
+<main>
+  <a class="back-link" href="index.html">← トップに戻る</a>
+
+  <header>
+    <h1>お問い合わせ・掲載依頼</h1>
+    <p>サイトへのご意見や、掲載・価格情報の修正依頼、企業様からの掲載依頼はこちらからお送りください。</p>
+  </header>
+
+  <div class="type-toggle" id="type-toggle">
+    <button type="button" class="active" data-type="general">一般のお問い合わせ</button>
+    <button type="button" data-type="listing">掲載・更新のご依頼(企業様)</button>
+    <button type="button" data-type="advertising">広告掲載のご相談</button>
+  </div>
+
+  <form id="contact-form">
+    <div class="field" id="field-company" style="display:none;">
+      <label>会社名 <span class="field-optional">(任意)</span></label>
+      <input type="text" id="company_name" />
+    </div>
+
+    <div class="field" id="field-service" style="display:none;">
+      <label>対象のサービス名 <span class="field-optional">(任意)</span></label>
+      <input type="text" id="service_name" placeholder="例: Cursor" />
+    </div>
+
+    <div class="field">
+      <label>ご連絡先メールアドレス <span class="field-optional">(任意)</span></label>
+      <input type="email" id="contact_email" placeholder="返信をご希望の場合はご記入ください" />
+    </div>
+
+    <div class="field">
+      <label>内容 <span id="message-required">*</span></label>
+      <textarea id="message" required></textarea>
+    </div>
+
+    <button type="submit" id="submit-btn">送信する</button>
+    <div id="form-status"></div>
+  </form>
+</main>
+
+<script>
+  const SUPABASE_URL = "https://azfcbwoxfepemsqsydgc.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_XPgx-18pz3WeKdhCycPm5Q_ho3mHF4F";
+
+  let currentType = "general";
+
+  const toggleButtons = document.querySelectorAll("#type-toggle button");
+  const fieldCompany = document.getElementById("field-company");
+  const fieldService = document.getElementById("field-service");
+
+  toggleButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggleButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentType = btn.dataset.type;
+      fieldCompany.style.display = currentType === "listing" || currentType === "advertising" ? "block" : "none";
+      fieldService.style.display = currentType === "listing" ? "block" : "none";
+    });
+  });
+
+  document.getElementById("contact-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = document.getElementById("submit-btn");
+    const statusEl = document.getElementById("form-status");
+    const message = document.getElementById("message").value.trim();
+
+    if (!message) {
+      statusEl.textContent = "内容を入力してください。";
+      statusEl.className = "error";
+      return;
+    }
+
+    submitBtn.disabled = true;
+    statusEl.textContent = "";
+    statusEl.className = "";
+
+    const payload = {
+      inquiry_type: currentType,
+      company_name: document.getElementById("company_name").value.trim() || null,
+      service_name: document.getElementById("service_name").value.trim() || null,
+      contact_email: document.getElementById("contact_email").value.trim() || null,
+      message,
+    };
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/contact_submissions`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error(`送信に失敗しました (${res.status})`);
+      }
+
+      document.getElementById("contact-form").reset();
+      statusEl.textContent = "送信しました。ありがとうございます。";
+      statusEl.className = "success";
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = "送信に失敗しました。時間をおいて再度お試しください。";
+      statusEl.className = "error";
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
