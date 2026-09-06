@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>管理者ページ — 未確認一覧</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --ink: #111111;
+    --ink-soft: #6b7280;
+    --ink-mute: #9ca3af;
+    --line: #e5e7eb;
+    --line-soft: #f0f0f0;
+    --card-bg: #ffffff;
+    --accent: #4f46e5;
+    --warn-bg: #fef3c7;
+    --warn-ink: #92400e;
+    --danger-bg: #fee2e2;
+    --danger-ink: #b91c1c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Segoe UI", sans-serif;
+    line-height: 1.6;
+    font-size: 17px;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  header p {
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    margin: 0 0 20px;
+  }
+  #status {
+    color: var(--ink-soft);
+    font-size: 15.5px;
+  }
+  .error { color: var(--danger-ink); }
+
+  section { margin-bottom: 28px; }
+  section h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 10px;
+  }
+  .summary {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .summary-card {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 14.5px;
+  }
+  .summary-card b { font-size: 20px; display: block; }
+
+  .item-list {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 14.5px;
+    flex-wrap: wrap;
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-name { font-weight: 600; }
+  .item-plan { color: var(--ink-mute); font-size: 13px; margin-left: 4px; }
+  .item-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .badge-warn { background: var(--warn-bg); color: var(--warn-ink); }
+  .badge-danger { background: var(--danger-bg); color: var(--danger-ink); }
+  .empty {
+    padding: 16px;
+    color: var(--ink-mute);
+    font-size: 14.5px;
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <header>
+    <h1>管理者ページ — 未確認一覧</h1>
+    <p>検索エンジンには登録されません。手動確認が必要なプランと、要注視のスクレイピング情報源を一覧表示します。</p>
+  </header>
+
+  <div id="status">読み込み中...</div>
+
+  <div id="content" style="display:none;">
+    <div class="summary" id="summary"></div>
+
+    <section>
+      <h2>手動入力待ちのプラン(MANUAL_ENTRY_REQUIRED)</h2>
+      <div class="item-list" id="manual-list"></div>
+    </section>
+
+    <section>
+      <h2>要確認フラグが立っている情報源(URLリダイレクトなど)</h2>
+      <div class="item-list" id="review-list"></div>
+    </section>
+
+    <section>
+      <h2>ページ別アクセス数</h2>
+      <div class="item-list" id="page-views-list"></div>
+    </section>
+
+    <section>
+      <h2>サービス別クリック数</h2>
+      <div class="item-list" id="product-clicks-list"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const SUPABASE_URL = "https://azfcbwoxfepemsqsydgc.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_XPgx-18pz3WeKdhCycPm5Q_ho3mHF4F";
+
+  const CATEGORY_LABEL = {
+    coding: "コーディング",
+    image: "画像生成",
+    video: "動画生成",
+    music: "音楽生成",
+  };
+
+  async function fetchFromSupabase(path) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+    });
+    if (!res.ok) {
+      throw new Error(`Supabaseからの取得に失敗しました (${res.status})`);
+    }
+    return res.json();
+  }
+
+  function renderManualList(rows) {
+    const listEl = document.getElementById("manual-list");
+    if (!rows || rows.length === 0) {
+      listEl.innerHTML = `<div class="empty">手動入力待ちのプランはありません。</div>`;
+      return;
+    }
+    let html = "";
+    for (const r of rows) {
+      const genre = CATEGORY_LABEL[r.category] || r.category;
+      html += `
+        <div class="item-row">
+          <div>
+            <span class="item-name">${r.product_name}</span>
+            <span class="item-plan">${r.plan_name}</span>
+          </div>
+          <span class="item-badge badge-warn">${genre}</span>
+        </div>`;
+    }
+    listEl.innerHTML = html;
+  }
+
+  function renderReviewList(rows) {
+    const listEl = document.getElementById("review-list");
+    if (!rows || rows.length === 0) {
+      listEl.innerHTML = `<div class="empty">要確認フラグが立っている情報源はありません。</div>`;
+      return;
+    }
+    let html = "";
+    for (const r of rows) {
+      html += `
+        <div class="item-row">
+          <div>
+            <span class="item-name">${r.display_name}</span>
+            <span class="item-plan">${r.last_status ?? ""}</span>
+          </div>
+          <span class="item-badge badge-danger">要確認</span>
+        </div>`;
+    }
+    listEl.innerHTML = html;
+  }
+
+  function renderSummary(manualCount, reviewCount) {
+    document.getElementById("summary").innerHTML = `
+      <div class="summary-card"><b>${manualCount}</b>手動入力待ち</div>
+      <div class="summary-card"><b>${reviewCount}</b>要確認ソース</div>
+    `;
+  }
+
+  const PAGE_LABEL = {
+    coding: "コーディング (index.html)",
+    image: "画像生成 (image.html)",
+    video: "動画生成 (video.html)",
+    music: "音楽生成 (music.html)",
+  };
+
+  function renderPageViews(rows) {
+    const listEl = document.getElementById("page-views-list");
+    if (!rows || rows.length === 0) {
+      listEl.innerHTML = `<div class="empty">まだアクセス記録がありません。</div>`;
+      return;
+    }
+    const sorted = [...rows].sort((a, b) => b.total_count - a.total_count);
+    let html = "";
+    for (const r of sorted) {
+      html += `
+        <div class="item-row">
+          <div>
+            <span class="item-name">${PAGE_LABEL[r.page] ?? r.page}</span>
+          </div>
+          <span class="item-plan">本日 ${r.today_count} / 累計 ${r.total_count}</span>
+        </div>`;
+    }
+    listEl.innerHTML = html;
+  }
+
+  function renderProductClicks(rows) {
+    const listEl = document.getElementById("product-clicks-list");
+    if (!rows || rows.length === 0) {
+      listEl.innerHTML = `<div class="empty">まだクリック記録がありません。</div>`;
+      return;
+    }
+    const sorted = [...rows].sort((a, b) => b.total_count - a.total_count);
+    let html = "";
+    for (const r of sorted) {
+      html += `
+        <div class="item-row">
+          <div>
+            <span class="item-name">${r.display_name ?? r.product_slug}</span>
+          </div>
+          <span class="item-plan">本日 ${r.today_count} / 累計 ${r.total_count}</span>
+        </div>`;
+    }
+    listEl.innerHTML = html;
+  }
+
+  async function main() {
+    const statusEl = document.getElementById("status");
+    const contentEl = document.getElementById("content");
+
+    try {
+      const [pricingRows] = await Promise.all([
+        fetchFromSupabase(
+          "public_pricing_view?select=product_name,plan_name,category,raw_price_text&raw_price_text=eq.MANUAL_ENTRY_REQUIRED&order=category,product_name"
+        ),
+      ]);
+
+      // pricing_sourcesはproduct_idしか持たないため、products と結合して
+      // 表示名(display_name)を一緒に取得する
+      let reviewRows = [];
+      try {
+        const rawReviewRows = await fetchFromSupabase(
+          "pricing_sources?select=last_status,needs_review,products(display_name)&needs_review=eq.true"
+        );
+        reviewRows = rawReviewRows.map((r) => ({
+          display_name: r.products?.display_name ?? "(不明)",
+          last_status: r.last_status,
+        }));
+      } catch (e) {
+        console.warn("要確認ソースの取得に失敗しました(pricing_sourcesとproductsの結合)", e);
+      }
+
+      renderManualList(pricingRows);
+      renderReviewList(reviewRows);
+      renderSummary(pricingRows.length, reviewRows.length);
+
+      const [pageViewRows, productClickRows] = await Promise.all([
+        fetchFromSupabase("page_views_summary?select=*"),
+        fetchFromSupabase("product_clicks_summary?select=*"),
+      ]);
+      renderPageViews(pageViewRows);
+      renderProductClicks(productClickRows);
+
+      statusEl.style.display = "none";
+      contentEl.style.display = "block";
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = `データの取得に失敗しました: ${err.message}`;
+      statusEl.classList.add("error");
+    }
+  }
+
+  main();
+</script>
+
+</body>
+</html>
