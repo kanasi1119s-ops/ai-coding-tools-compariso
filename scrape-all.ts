@@ -1911,6 +1911,203 @@ const riffusionConfig: SiteConfig = {
   },
 };
 
+// ============================================================
+// 音声合成AI(voice)ジャンル
+// ------------------------------------------------------------
+// image/video/musicジャンルと同様、各社の料金ページはJSタブ切り替え・
+// 動的レンダリングが多く、現状のfetch+cheerio構成では安定した自動抽出が
+// 難しいため、他ジャンルの構成に倣い skipFetch: true のプレースホルダー
+// 実装とする(実際の価格は voice-manual-prices-final.sql /
+// update-manual-price.ts 経由で手動更新)。
+// persistSite() 側で「既に手動入力済みならMANUAL_ENTRY_REQUIREDで
+// 上書きしない」ガードがあるため、このワークフローを実行しても
+// 手動で入れた価格が消えることはない。
+//
+// resemble-ai / wellsaid-labs / respeecher の3サービスは従量課金・
+// 個別見積もりが中心で自動スクレイピングに向かないため、ここには
+// 含めない(manual-prices.sql での手動更新のみで運用)。
+// ============================================================
+
+const elevenLabsConfig: SiteConfig = {
+  slug: "elevenlabs",
+  displayName: "ElevenLabs",
+  officialSite: "https://elevenlabs.io",
+  sourceUrl: "https://elevenlabs.io/pricing",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Free", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Starter", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Creator", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Pro", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "team" },
+      { planName: "Scale", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "team" },
+      { planName: "Business", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "enterprise" },
+    ];
+  },
+};
+
+const murfAIConfig: SiteConfig = {
+  slug: "murf-ai",
+  displayName: "Murf AI",
+  officialSite: "https://murf.ai",
+  sourceUrl: "https://murf.ai/pricing",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Free", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Creator", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Business", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "team" },
+    ];
+  },
+};
+
+const descriptOverdubConfig: SiteConfig = {
+  slug: "descript-overdub",
+  displayName: "Descript (Overdub)",
+  officialSite: "https://www.descript.com",
+  sourceUrl: "https://www.descript.com/pricing",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Free", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Hobbyist", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Creator", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Business", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "team" },
+    ];
+  },
+};
+
+const speechifyConfig: SiteConfig = {
+  slug: "speechify",
+  displayName: "Speechify",
+  officialSite: "https://speechify.com",
+  sourceUrl: "https://speechify.com/pricing/",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Free", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Premium", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Studio Starter", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Studio Creator", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "team" },
+    ];
+  },
+};
+
+const lovoConfig: SiteConfig = {
+  slug: "lovo",
+  displayName: "LOVO",
+  officialSite: "https://lovo.ai",
+  sourceUrl: "https://lovo.ai/pricing",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Free", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Basic", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Pro", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Pro+", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "team" },
+    ];
+  },
+};
+
+const noizAIConfig: SiteConfig = {
+  slug: "noiz-ai",
+  displayName: "Noiz.ai",
+  officialSite: "https://noiz.ai",
+  sourceUrl: "https://noiz.ai/pricing",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Free", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Starter", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Creator", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+    ];
+  },
+};
+
+// Amazon Polly / Google Cloud TTS / Azure AI Speech:
+// 「100万文字あたり◯ドル」の従量課金APIのため、priceBasisは月額固定の
+// 'flat'ではなく'custom'を使う(base_price_amountは月額ではなく単価)。
+const amazonPollyConfig: SiteConfig = {
+  slug: "amazon-polly",
+  displayName: "Amazon Polly",
+  officialSite: "https://aws.amazon.com/polly/",
+  sourceUrl: "https://aws.amazon.com/polly/pricing/",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Standard(100万文字)", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "custom", audience: "individual" },
+      { planName: "Neural(100万文字)", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "custom", audience: "team" },
+    ];
+  },
+};
+
+const googleCloudTTSConfig: SiteConfig = {
+  slug: "google-cloud-tts",
+  displayName: "Google Cloud Text-to-Speech",
+  officialSite: "https://cloud.google.com/text-to-speech",
+  sourceUrl: "https://cloud.google.com/text-to-speech/pricing",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Standard/WaveNet(100万文字)", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "custom", audience: "individual" },
+      { planName: "Neural2(100万文字)", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "custom", audience: "team" },
+      { planName: "Studio(100万文字)", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "custom", audience: "enterprise" },
+    ];
+  },
+};
+
+const azureAISpeechConfig: SiteConfig = {
+  slug: "azure-ai-speech",
+  displayName: "Azure AI Speech",
+  officialSite: "https://azure.microsoft.com/en-us/products/ai-services/ai-speech",
+  sourceUrl: "https://azure.microsoft.com/en-us/pricing/details/speech/",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Neural(100万文字)", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "custom", audience: "team" },
+      { planName: "Neural HD(100万文字)", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "custom", audience: "team" },
+    ];
+  },
+};
+
+const listnrConfig: SiteConfig = {
+  slug: "listnr",
+  displayName: "Listnr",
+  officialSite: "https://listnr.tech",
+  sourceUrl: "https://listnr.tech/pricing",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Individual", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+      { planName: "Solo", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+    ];
+  },
+};
+
+const hyperVoiceConfig: SiteConfig = {
+  slug: "hypervoice",
+  displayName: "HyperVoice",
+  officialSite: "https://www.hypervoice.ai",
+  sourceUrl: "https://www.hypervoice.ai/pricing",
+  skipFetch: true,
+  category: "voice",
+  parse(html) {
+    return [
+      { planName: "Standard", rawPriceText: "MANUAL_ENTRY_REQUIRED", basePriceAmount: null, billingPeriod: "monthly", priceBasis: "flat", audience: "individual" },
+    ];
+  },
+};
+
 const SITES: SiteConfig[] = [
   cursorConfig,
   copilotConfig,
@@ -1970,6 +2167,17 @@ const SITES: SiteConfig[] = [
   beatovenConfig,
   musicfyConfig,
   riffusionConfig,
+  elevenLabsConfig,
+  murfAIConfig,
+  descriptOverdubConfig,
+  speechifyConfig,
+  lovoConfig,
+  noizAIConfig,
+  amazonPollyConfig,
+  googleCloudTTSConfig,
+  azureAISpeechConfig,
+  listnrConfig,
+  hyperVoiceConfig,
 ];
 
 // ============================================================
